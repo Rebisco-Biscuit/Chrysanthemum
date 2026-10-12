@@ -98,7 +98,7 @@ export default function Tracker({ initial, heroes, frames }: { initial: AppState
   return (
     <div className="app">
       <header className="top">
-        <h1>AFKJ Tracker</h1>
+        <h1>AFK Journey Tracker</h1>
         <nav className="tabs">
           {TABS.map((t) => (
             <button key={t} className={t === tab ? "active" : ""} onClick={() => pickTab(t)}>

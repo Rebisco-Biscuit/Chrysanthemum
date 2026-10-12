@@ -26,7 +26,7 @@ export default function LoginPage() {
   return (
     <main className="login">
       <form onSubmit={submit} className="card">
-        <h1>AFKJ Tracker</h1>
+        <h1>AFK Journey Tracker</h1>
         <input
           type="password"
           placeholder="Password"

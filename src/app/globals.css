@@ -1,15 +1,20 @@
 :root {
   --bg: #f6f4ef;
-  --surface: #ffffff;
-  --surface-2: #efece5;
-  --border: #dcd7cc;
+  /* Frosted panel and the translucent layers that sit on it */
+  --glass: rgb(255 255 255 / 0.58);
+  --glass-edge: rgb(255 255 255 / 0.7);
+  --glass-shadow: 0 12px 40px rgb(20 30 60 / 0.25);
+  --surface: rgb(255 255 255 / 0.6);
+  --surface-2: rgb(255 255 255 / 0.38);
+  --border: rgb(70 60 40 / 0.14);
+  --menu: #fbfaf7;
   --text: #1d1f24;
   --muted: #6b6f78;
   --accent: #b5762a;
   --accent-text: #ffffff;
   --good: #2f8a4d;
   --warn: #b0502c;
-  --bar: #e4dfd4;
+  --bar: rgb(70 60 40 / 0.12);
 
   --lightbearer: #c99a2e;
   --mauler: #c4473b;
@@ -25,16 +30,20 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #14161a;
-    --surface: #1d2026;
-    --surface-2: #262a31;
-    --border: #343941;
+    --glass: rgb(16 18 24 / 0.62);
+    --glass-edge: rgb(255 255 255 / 0.12);
+    --glass-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
+    --surface: rgb(255 255 255 / 0.07);
+    --surface-2: rgb(255 255 255 / 0.11);
+    --border: rgb(255 255 255 / 0.12);
+    --menu: #1d2026;
     --text: #e9e7e2;
     --muted: #9aa0aa;
     --accent: #e0a24f;
     --accent-text: #1a1308;
     --good: #5cc27b;
     --warn: #e58262;
-    --bar: #2f343c;
+    --bar: rgb(255 255 255 / 0.1);
     color-scheme: dark;
   }
 }
@@ -43,12 +52,16 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: url("https://images3.alphacoders.com/136/thumb-1920-1364268.jpeg") center/cover no-repeat fixed;
+  background-color: var(--bg);
   color: var(--text);
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 button, input, select { font: inherit; color: inherit; }
+/* Native dropdown lists can't be frosted; keep them solid so options stay readable. */
+option { background: var(--menu); color: var(--text); }
+::placeholder { color: var(--muted); opacity: 1; }
 
 input, select {
   background: var(--surface);
@@ -65,11 +78,24 @@ button {
   padding: 6px 12px;
   cursor: pointer;
 }
+button:hover:not(:disabled) { background: var(--surface); }
 button:disabled { opacity: 0.5; cursor: default; }
 button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 600; }
+button.primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
 button.ghost { background: none; border-color: transparent; color: var(--muted); }
 
-.app { max-width: 960px; margin: 0 auto; padding: 16px; }
+/* Frosted glass panel over the wallpaper */
+.app {
+  max-width: 960px; margin: 24px auto; padding: 20px; border-radius: 20px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+@media (max-width: 680px) {
+  .app { margin: 8px; padding: 14px; border-radius: 16px; }
+}
 
 header.top {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
@@ -81,7 +107,8 @@ header.top h1 { font-size: 20px; margin: 0; }
 
 .tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 10px; }
 .tabs button { border: none; background: none; padding: 6px 14px; }
-.tabs button.active { background: var(--surface); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); font-weight: 600; }
+.tabs button.active { background: var(--surface); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); font-weight: 600; }
+.tabs button:hover:not(.active) { background: var(--surface-2); }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
 .stack { display: grid; gap: 16px; }
@@ -111,15 +138,15 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 
 .resources h2 { margin-bottom: 10px; }
 .resources p { margin: 10px 0 0; }
-.pools { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.pools { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
 .pool {
-  display: grid; grid-template-columns: 1fr 72px; gap: 4px 6px; align-items: center;
+  display: grid; grid-template-columns: minmax(70px, 1fr) 74px; gap: 4px 6px; align-items: center;
   padding: 8px 10px; border-radius: 10px; background: var(--surface-2);
   border-left: 4px solid var(--faction, var(--accent));
 }
 .pool .label { grid-column: 1 / -1; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .pool input { width: 100%; min-width: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
-.pool input.add { font-weight: 400; font-size: 13px; }
+.pool input.add { font-weight: 400; font-size: 13px; padding-inline: 8px; }
 
 .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .filters input[type="search"] { flex: 1 1 180px; }
@@ -173,7 +200,15 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 }
 
 .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
-.login form { display: grid; gap: 12px; width: min(320px, 100%); }
+.login form {
+  display: grid; gap: 12px; width: min(320px, 100%);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
+}
 .login h1 { margin: 0; font-size: 20px; }
 .error { color: var(--warn); margin: 0; }
 textarea { width: 100%; min-height: 120px; font: 12px/1.4 ui-monospace, monospace; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }

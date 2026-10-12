@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AFKJ Tracker",
+  title: "AFK Journey Tracker",
   description: "AFK Journey dailies and hero ascension tracker",
 };
 
