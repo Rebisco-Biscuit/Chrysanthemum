@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Hero } from "@/lib/data";
+import type { Frames, Hero } from "@/lib/data";
 import { normalize, pruneDone, type AppState } from "@/lib/state";
 import Dailies from "./Dailies";
 import Heroes from "./Heroes";
@@ -13,7 +13,7 @@ type Sync = "saved" | "saving" | "error";
 
 export type Update = (fn: (s: AppState) => AppState) => void;
 
-export default function Tracker({ initial, heroes }: { initial: AppState; heroes: Hero[] }) {
+export default function Tracker({ initial, heroes, frames }: { initial: AppState; heroes: Hero[]; frames: Frames }) {
   const [state, setState] = useState(() => pruneDone(initial));
   const [tab, setTab] = useState<Tab>("Dailies");
   const [sync, setSync] = useState<Sync>("saved");
@@ -109,7 +109,7 @@ export default function Tracker({ initial, heroes }: { initial: AppState; heroes
         <span className={`sync ${sync === "error" ? "error" : ""}`}>{syncLabel}</span>
       </header>
       {tab === "Dailies" && <Dailies state={state} update={update} now={now} />}
-      {tab === "Heroes" && <Heroes state={state} update={update} heroes={heroes} />}
+      {tab === "Heroes" && <Heroes state={state} update={update} heroes={heroes} frames={frames} />}
       {tab === "Data" && <DataTab state={state} update={update} />}
     </div>
   );

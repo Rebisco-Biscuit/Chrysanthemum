@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "capture": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/afkj-capture.ps1 && npm run capture:import",
+    "capture:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/afkj-import.mjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.35.0",

@@ -109,6 +109,18 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 .stat .value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .stat input { width: 100%; font-size: 18px; font-weight: 600; }
 
+.resources h2 { margin-bottom: 10px; }
+.resources p { margin: 10px 0 0; }
+.pools { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.pool {
+  display: grid; grid-template-columns: 1fr 72px; gap: 4px 6px; align-items: center;
+  padding: 8px 10px; border-radius: 10px; background: var(--surface-2);
+  border-left: 4px solid var(--faction, var(--accent));
+}
+.pool .label { grid-column: 1 / -1; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.pool input { width: 100%; min-width: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pool input.add { font-weight: 400; font-size: 13px; }
+
 .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .filters input[type="search"] { flex: 1 1 180px; }
 .chip { border-radius: 99px; padding: 4px 10px; font-size: 13px; }
@@ -122,6 +134,27 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 }
 .hero.unowned { opacity: 0.6; }
 .hero .name { font-weight: 600; }
+.who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Hero card, after the wiki's Card layout (MediaWiki:Card.css): 117x165 ratio. */
+.hero-card {
+  --cw: 58px; --ch: 82px;
+  position: relative; flex: none; width: var(--cw); height: var(--ch);
+  margin: 8px 6px 10px; /* room for Supreme+/Paragon frames, which extend past the card */
+}
+.hero-card .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.hero-card .art {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 6px 0 4px 0;
+  display: grid; place-items: center;
+  font-size: 14px; font-weight: 600; color: var(--muted);
+}
+.hero-card .art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; }
+/* Supreme+ and Paragon frames are larger than the card and sit higher (same offsets as the wiki). */
+.hero-card[data-tier="Supreme+"] .fg { width: 126%; height: auto; left: -14%; top: auto; margin-top: -16%; }
+.hero-card[data-tier="Paragon 1"] .fg { width: 123%; height: auto; left: -13%; top: auto; margin-top: -25%; }
+.hero-card[data-tier="Paragon 2"] .fg { width: 123%; height: auto; left: -13%; top: auto; margin-top: -20%; }
+.hero-card[data-tier="Paragon 3"] .fg { width: 123%; height: auto; left: -13%; top: auto; margin-top: -18%; }
+.hero-card[data-tier="Paragon 4"] .fg { width: 123%; height: auto; left: -13%; top: auto; margin-top: -13%; }
+.hero.unowned .hero-card { filter: grayscale(1); }
 .hero .meta { font-size: 12px; color: var(--muted); }
 .stepper { display: flex; align-items: center; }
 .stepper button { padding: 4px 10px; }
@@ -135,6 +168,7 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 
 @media (max-width: 680px) {
   .hero { grid-template-columns: 1fr 1fr; }
+  .hero .who { grid-column: 1 / -1; }
   .hero .next { grid-column: 1 / -1; }
 }
 

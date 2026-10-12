@@ -43,7 +43,7 @@ export const FACTIONS: Faction[] = [
 /** A = A-level, S = S-level, CH = Celestial/Hypogean (S-level with its own table). */
 export type CostTable = "A" | "S" | "CH";
 
-/** Cost to reach a tier: own Soul Sigils, or Omni-Acorns. null = not reachable by ascension. */
+/** Cost to reach a tier: own Soul Sigils, or acorns (faction or Omni). null = not reachable by ascension. */
 export type Cost = { sigils: number } | { acorns: number } | null;
 
 const s = (n: number): Cost => ({ sigils: n });
@@ -73,7 +73,17 @@ export type Hero = {
   costs: CostTable;
   /** Crossover Dimensional hero: switches to Dimensional Soulstones after the banner ends. */
   crossover?: true;
+  /** Wiki image URL, filled in at runtime by roster.ts. */
+  portrait?: string;
 };
+
+/** Wiki card layers per tier (index = TIERS); empty string when unavailable. */
+export type Frames = { background: string[]; foreground: string[] };
+
+/** Factions with their own acorn. Other factions ascend with Omni-Acorns only. */
+export const ACORN_FACTIONS = ["Lightbearer", "Mauler", "Wilder", "Graveborn"] as const;
+export type AcornFaction = (typeof ACORN_FACTIONS)[number];
+export const hasFactionAcorn = (f: Faction): f is AcornFaction => (ACORN_FACTIONS as readonly Faction[]).includes(f);
 
 export const startTier = (h: Hero) => (h.costs === "A" ? 0 : 2);
 export const grade = (h: Hero) => (h.costs === "A" ? "A" : "S");

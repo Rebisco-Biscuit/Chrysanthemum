@@ -1,4 +1,4 @@
-import { COSTS, MAX_TIER, SOULSTONE_RATE, type Hero } from "./data";
+import { COSTS, MAX_TIER, SOULSTONE_RATE, hasFactionAcorn, type AcornFaction, type Hero } from "./data";
 
 export type HeroState = {
   /** Index into TIERS, or -1 if not owned. */
@@ -22,7 +22,10 @@ export const ACTIVITY_GOAL = 100;
 export type AppState = {
   updatedAt: number;
   heroes: Record<string, HeroState>;
+  /** Omni-Acorns: usable for any faction. */
   acorns: number;
+  /** Faction acorns: usable only for heroes of that faction. */
+  factionAcorns: Partial<Record<AcornFaction, number>>;
   soulstonesA: number;
   soulstonesS: number;
   tasks: Task[];
@@ -55,6 +58,7 @@ export function defaultState(): AppState {
     updatedAt: 0,
     heroes: {},
     acorns: 0,
+    factionAcorns: {},
     soulstonesA: 0,
     soulstonesS: 0,
     tasks: defaultTasks(),
@@ -126,9 +130,21 @@ export function costTo(hero: Hero, hs: HeroState, target: number) {
 
 /** How many of the shared resource a step can draw on. */
 export function available(state: AppState, hero: Hero, hs: HeroState, kind: Step["kind"]) {
-  if (kind === "acorns") return state.acorns;
+  if (kind === "acorns") return state.acorns + factionAcorns(state, hero);
   if (kind === "soulstones") return hero.costs === "A" ? state.soulstonesA : state.soulstonesS;
   return hs.sigils;
+}
+
+export const factionAcorns = (state: AppState, hero: Hero) =>
+  hasFactionAcorn(hero.faction) ? (state.factionAcorns[hero.faction] ?? 0) : 0;
+
+/** Pay an acorn cost for this hero: faction acorns first, then Omni-Acorns. */
+export function spendAcorns(state: AppState, hero: Hero, amount: number): AppState {
+  const own = Math.min(factionAcorns(state, hero), amount);
+  const next = { ...state, acorns: Math.max(0, state.acorns - (amount - own)) };
+  if (own > 0 && hasFactionAcorn(hero.faction))
+    next.factionAcorns = { ...state.factionAcorns, [hero.faction]: factionAcorns(state, hero) - own };
+  return next;
 }
 
 export const countAtLeast = (state: AppState, heroes: Hero[], tier: number) =>

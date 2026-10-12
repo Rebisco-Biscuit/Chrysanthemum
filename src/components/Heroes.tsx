@@ -1,13 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FACTIONS, PARAGON_GATES, SUPREME_PLUS, TIERS, grade, startTier, type Faction, type Hero } from "@/lib/data";
+import {
+  ACORN_FACTIONS,
+  FACTIONS,
+  PARAGON_GATES,
+  SUPREME_PLUS,
+  TIERS,
+  grade,
+  startTier,
+  type AcornFaction,
+  type Faction,
+  type Frames,
+  type Hero,
+} from "@/lib/data";
 import {
   available,
   costTo,
   countAtLeast,
   heroState,
   nextStep,
+  spendAcorns,
   type AppState,
   type HeroState,
   type Step,
@@ -16,6 +29,8 @@ import type { Update } from "./Tracker";
 
 type Owned = "all" | "owned" | "unowned";
 type Sort = "name" | "tier" | "ready";
+
+const factionVar = (f: Faction) => `var(--${f.toLowerCase()})`;
 
 const UNIT: Record<Step["kind"], string> = {
   sigils: "sigils",
@@ -30,11 +45,22 @@ function gateFor(state: AppState, heroes: Hero[], tier: number) {
   return have >= gate.needs ? null : { have, ...gate };
 }
 
-export default function Heroes({ state, update, heroes }: { state: AppState; update: Update; heroes: Hero[] }) {
+export default function Heroes({
+  state,
+  update,
+  heroes,
+  frames,
+}: {
+  state: AppState;
+  update: Update;
+  heroes: Hero[];
+  frames: Frames;
+}) {
   const [query, setQuery] = useState("");
   const [faction, setFaction] = useState<Faction | null>(null);
   const [owned, setOwned] = useState<Owned>("all");
   const [sort, setSort] = useState<Sort>("tier");
+  const [tier, setTier] = useState<number | null>(null);
 
   const ownedCount = heroes.filter((h) => heroState(state, h.name).tier >= 0).length;
 
@@ -46,11 +72,12 @@ export default function Heroes({ state, update, heroes }: { state: AppState; upd
       return step ? available(state, h, hs, step.kind) / step.amount : -1;
     };
     return heroes.filter((h) => {
-      const tier = heroState(state, h.name).tier;
+      const t = heroState(state, h.name).tier;
       if (q && !h.name.toLowerCase().includes(q)) return false;
+      if (tier !== null && t !== tier) return false;
       if (faction && h.faction !== faction) return false;
-      if (owned === "owned" && tier < 0) return false;
-      if (owned === "unowned" && tier >= 0) return false;
+      if (owned === "owned" && t < 0) return false;
+      if (owned === "unowned" && t >= 0) return false;
       return true;
     }).sort((a, b) => {
       if (sort === "tier") {
@@ -63,7 +90,7 @@ export default function Heroes({ state, update, heroes }: { state: AppState; upd
       }
       return a.name.localeCompare(b.name);
     });
-  }, [state, heroes, query, faction, owned, sort]);
+  }, [state, heroes, query, faction, owned, sort, tier]);
 
   function setHero(name: string, patch: Partial<HeroState>) {
     update((s) => ({ ...s, heroes: { ...s.heroes, [name]: { ...heroState(s, name), ...patch } } }));
@@ -73,11 +100,15 @@ export default function Heroes({ state, update, heroes }: { state: AppState; upd
     update((s) => ({ ...s, [field]: Math.max(0, value || 0) }));
   }
 
+  function setFactionAcorns(faction: AcornFaction, value: number) {
+    update((s) => ({ ...s, factionAcorns: { ...s.factionAcorns, [faction]: Math.max(0, value || 0) } }));
+  }
+
   function ascend(hero: Hero, step: Step) {
     update((s) => {
       const hs = heroState(s, hero.name);
-      const next = { ...s, heroes: { ...s.heroes, [hero.name]: { ...hs, tier: step.tier } } };
-      if (step.kind === "acorns") next.acorns = Math.max(0, s.acorns - step.amount);
+      let next = { ...s, heroes: { ...s.heroes, [hero.name]: { ...hs, tier: step.tier } } };
+      if (step.kind === "acorns") next = spendAcorns(next, hero, step.amount);
       else if (step.kind === "soulstones") {
         const field = hero.costs === "A" ? "soulstonesA" : "soulstonesS";
         next[field] = Math.max(0, s[field] - step.amount);
@@ -107,28 +138,38 @@ export default function Heroes({ state, update, heroes }: { state: AppState; upd
             </span>
           )}
         </div>
-        <label className="stat">
-          <span className="label">Omni-Acorns</span>
-          <input type="number" min={0} value={state.acorns} onChange={(e) => setNum("acorns", +e.target.value)} />
-        </label>
-        <label className="stat">
-          <span className="label">Soulstones (A)</span>
-          <input
-            type="number"
-            min={0}
+      </div>
+
+      <div className="card resources">
+        <h2>Resources</h2>
+        <div className="pools">
+          <Pool label="Omni-Acorns" value={state.acorns} onChange={(v) => setNum("acorns", v)} />
+          {ACORN_FACTIONS.map((f) => (
+            <Pool
+              key={f}
+              label={`${f} Acorns`}
+              color={factionVar(f)}
+              value={state.factionAcorns[f] ?? 0}
+              onChange={(v) => setFactionAcorns(f, v)}
+            />
+          ))}
+          <Pool
+            label="Soulstones (A)"
+            color={factionVar("Dimensional")}
             value={state.soulstonesA}
-            onChange={(e) => setNum("soulstonesA", +e.target.value)}
+            onChange={(v) => setNum("soulstonesA", v)}
           />
-        </label>
-        <label className="stat">
-          <span className="label">Soulstones (S)</span>
-          <input
-            type="number"
-            min={0}
+          <Pool
+            label="Soulstones (S)"
+            color={factionVar("Dimensional")}
             value={state.soulstonesS}
-            onChange={(e) => setNum("soulstonesS", +e.target.value)}
+            onChange={(v) => setNum("soulstonesS", v)}
           />
-        </label>
+        </div>
+        <p className="small muted">
+          Type what you just got into <b>+ add</b> and press Enter. Acorn costs use the hero&apos;s faction acorns
+          first, then Omni-Acorns.
+        </p>
       </div>
 
       <div className="filters">
@@ -137,6 +178,18 @@ export default function Heroes({ state, update, heroes }: { state: AppState; upd
           <option value="all">All</option>
           <option value="owned">Owned</option>
           <option value="unowned">Not owned</option>
+        </select>
+        <select
+          value={tier ?? ""}
+          onChange={(e) => setTier(e.target.value === "" ? null : +e.target.value)}
+          aria-label="Filter by tier"
+        >
+          <option value="">All tiers</option>
+          {TIERS.map((t, i) => (
+            <option key={t} value={i}>
+              {t}
+            </option>
+          ))}
         </select>
         <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
           <option value="tier">Sort: tier</option>
@@ -161,7 +214,15 @@ export default function Heroes({ state, update, heroes }: { state: AppState; upd
 
       <div className="heroes">
         {list.map((h) => (
-          <HeroRow key={h.name} hero={h} heroes={heroes} state={state} setHero={setHero} ascend={ascend} />
+          <HeroRow
+            key={h.name}
+            hero={h}
+            heroes={heroes}
+            frames={frames}
+            state={state}
+            setHero={setHero}
+            ascend={ascend}
+          />
         ))}
         {list.length === 0 && <p className="muted">No heroes match.</p>}
       </div>
@@ -169,15 +230,82 @@ export default function Heroes({ state, update, heroes }: { state: AppState; upd
   );
 }
 
+/** A shared resource: the total is editable, and "+ add" adds what you just earned. */
+function Pool({
+  label,
+  value,
+  onChange,
+  color,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  color?: string;
+}) {
+  const [add, setAdd] = useState("");
+  const commit = () => {
+    const n = Math.trunc(+add);
+    if (n) onChange(value + n);
+    setAdd("");
+  };
+  return (
+    <div className="pool" style={color ? ({ "--faction": color } as React.CSSProperties) : undefined}>
+      <span className="label">{label}</span>
+      <input type="number" min={0} value={value} onChange={(e) => onChange(+e.target.value)} aria-label={label} />
+      <input
+        type="number"
+        className="add"
+        placeholder="+ add"
+        value={add}
+        onChange={(e) => setAdd(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && commit()}
+        onBlur={commit}
+        aria-label={`Add ${label}`}
+      />
+    </div>
+  );
+}
+
+/** Hero card in the wiki's style: tier background, card art, tier frame. Unowned heroes show their starting tier. */
+function HeroCard({ hero, tier, frames }: { hero: Hero; tier: number; frames: Frames }) {
+  const [broken, setBroken] = useState(false);
+  const shown = tier >= 0 ? tier : startTier(hero);
+  const initials = hero.name
+    .split(/[s&]+/)
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2);
+  const bg = frames.background[shown];
+  const fg = frames.foreground[shown];
+  return (
+    <div className="hero-card" data-tier={TIERS[shown]} title={tier >= 0 ? TIERS[tier] : "Not owned"}>
+      {/* eslint-disable @next/next/no-img-element */}
+      {bg && <img className="layer bg" src={bg} alt="" loading="lazy" />}
+      <div className="art">
+        {hero.portrait && !broken ? (
+          <img src={hero.portrait} alt="" loading="lazy" onError={() => setBroken(true)} />
+        ) : (
+          <span>{initials}</span>
+        )}
+      </div>
+      {fg && <img className="layer fg" src={fg} alt="" loading="lazy" />}
+      {/* eslint-enable @next/next/no-img-element */}
+    </div>
+  );
+}
+
 function HeroRow({
   hero,
   heroes,
+  frames,
   state,
   setHero,
   ascend,
 }: {
   hero: Hero;
   heroes: Hero[];
+  frames: Frames;
   state: AppState;
   setHero: (name: string, patch: Partial<HeroState>) => void;
   ascend: (hero: Hero, step: Step) => void;
@@ -194,12 +322,15 @@ function HeroRow({
   return (
     <div
       className={`hero ${hs.tier < 0 ? "unowned" : ""}`}
-      style={{ "--faction": `var(--${hero.faction.toLowerCase()})` } as React.CSSProperties}
+      style={{ "--faction": factionVar(hero.faction) } as React.CSSProperties}
     >
-      <div>
-        <div className="name">{hero.name}</div>
-        <div className="meta">
-          {hero.faction} · {grade(hero)}-level
+      <div className="who">
+        <HeroCard hero={hero} tier={hs.tier} frames={frames} />
+        <div>
+          <div className="name">{hero.name}</div>
+          <div className="meta">
+            {hero.faction} · {grade(hero)}-level
+          </div>
         </div>
       </div>
 
