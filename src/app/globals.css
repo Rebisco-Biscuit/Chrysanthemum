@@ -87,7 +87,7 @@ button.ghost { background: none; border-color: transparent; color: var(--muted);
 /* Frosted glass panel over the wallpaper */
 .app {
   max-width: 960px; margin: 24px auto; padding: 20px; border-radius: 20px;
-  background: var(--glass);
+  background: rgb(16 18 24 / 80%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid var(--glass-edge);
