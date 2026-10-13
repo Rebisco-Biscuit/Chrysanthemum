@@ -28,6 +28,7 @@ import {
 import type { Update } from "./Tracker";
 
 type Owned = "all" | "owned" | "unowned";
+type Grade = "all" | "A" | "S";
 type Sort = "name" | "tier" | "ready";
 
 const factionVar = (f: Faction) => `var(--${f.toLowerCase()})`;
@@ -61,6 +62,7 @@ export default function Heroes({
   const [owned, setOwned] = useState<Owned>("all");
   const [sort, setSort] = useState<Sort>("tier");
   const [tier, setTier] = useState<number | null>(null);
+  const [gradeFilter, setGradeFilter] = useState<Grade>("all");
 
   const ownedCount = heroes.filter((h) => heroState(state, h.name).tier >= 0).length;
 
@@ -75,6 +77,7 @@ export default function Heroes({
       const t = heroState(state, h.name).tier;
       if (q && !h.name.toLowerCase().includes(q)) return false;
       if (tier !== null && t !== tier) return false;
+      if (gradeFilter !== "all" && grade(h) !== gradeFilter) return false;
       if (faction && h.faction !== faction) return false;
       if (owned === "owned" && t < 0) return false;
       if (owned === "unowned" && t >= 0) return false;
@@ -90,7 +93,7 @@ export default function Heroes({
       }
       return a.name.localeCompare(b.name);
     });
-  }, [state, heroes, query, faction, owned, sort, tier]);
+  }, [state, heroes, query, faction, owned, sort, tier, gradeFilter]);
 
   function setHero(name: string, patch: Partial<HeroState>) {
     update((s) => ({ ...s, heroes: { ...s.heroes, [name]: { ...heroState(s, name), ...patch } } }));
@@ -178,6 +181,11 @@ export default function Heroes({
           <option value="all">All</option>
           <option value="owned">Owned</option>
           <option value="unowned">Not owned</option>
+        </select>
+        <select value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value as Grade)} aria-label="Filter by grade">
+          <option value="all">A & S</option>
+          <option value="A">A-level</option>
+          <option value="S">S-level</option>
         </select>
         <select
           value={tier ?? ""}
