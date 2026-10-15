@@ -1,4 +1,4 @@
-# <img width="32" height="32" alt="image" src="https://github.com/user-attachments/assets/b92a734c-77f6-4d57-955d-709e7fefc7b4" />Chrysanthemum
+# <img width="30" height="30" alt="image" src="https://github.com/user-attachments/assets/b92a734c-77f6-4d57-955d-709e7fefc7b4" /> Chrysanthemum
 
 An AFK Journey tracker for daily/weekly tasks and hero ascension (Soul Sigils, faction and Omni-Acorns, Dimensional Soulstones). It saves to a server so the same data shows on every device.
 
