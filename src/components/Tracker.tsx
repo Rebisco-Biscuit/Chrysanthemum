@@ -2,20 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Frames, Hero } from "@/lib/data";
-import { normalize, pruneDone, type AppState } from "@/lib/state";
-import Dailies from "./Dailies";
+import { normalize, pruneBought, type AppState } from "@/lib/state";
+import Emporium from "./Emporium";
 import Heroes from "./Heroes";
 import DataTab from "./DataTab";
 
-const TABS = ["Dailies", "Heroes", "Data"] as const;
+const TABS = ["Heroes", "Emporium", "Data"] as const;
 type Tab = (typeof TABS)[number];
 type Sync = "saved" | "saving" | "error";
 
 export type Update = (fn: (s: AppState) => AppState) => void;
 
 export default function Tracker({ initial, heroes, frames }: { initial: AppState; heroes: Hero[]; frames: Frames }) {
-  const [state, setState] = useState(() => pruneDone(initial));
-  const [tab, setTab] = useState<Tab>("Dailies");
+  const [state, setState] = useState(() => pruneBought(initial));
+  const [tab, setTab] = useState<Tab>("Heroes");
   const [sync, setSync] = useState<Sync>("saved");
   const [now, setNow] = useState(() => Date.now());
   const dirty = useRef(false);
@@ -69,7 +69,7 @@ export default function Tracker({ initial, heroes, frames }: { initial: AppState
         const res = await fetch("/api/state", { cache: "no-store" });
         if (!res.ok || dirty.current) return;
         const remote = normalize(await res.json());
-        setState((prev) => (remote.updatedAt > prev.updatedAt ? pruneDone(remote) : prev));
+        setState((prev) => (remote.updatedAt > prev.updatedAt ? pruneBought(remote) : prev));
       } catch {}
     }
     document.addEventListener("visibilitychange", refresh);
@@ -80,7 +80,7 @@ export default function Tracker({ initial, heroes, frames }: { initial: AppState
     };
   }, []);
 
-  // Clock for reset countdowns.
+  // Clock for store reset countdowns.
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
@@ -108,8 +108,8 @@ export default function Tracker({ initial, heroes, frames }: { initial: AppState
         </nav>
         <span className={`sync ${sync === "error" ? "error" : ""}`}>{syncLabel}</span>
       </header>
-      {tab === "Dailies" && <Dailies state={state} update={update} now={now} />}
       {tab === "Heroes" && <Heroes state={state} update={update} heroes={heroes} frames={frames} />}
+      {tab === "Emporium" && <Emporium state={state} update={update} heroes={heroes} frames={frames} now={now} />}
       {tab === "Data" && <DataTab state={state} update={update} />}
     </div>
   );

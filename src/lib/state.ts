@@ -11,14 +11,6 @@ export type HeroState = {
   soulstones?: boolean;
 };
 
-export type Period = "daily" | "weekly";
-
-/** activity: Daily Quest activity points this task gives, if any (entered by the user). */
-export type Task = { id: string; name: string; period: Period; activity?: number };
-
-/** Daily Quest chest target. */
-export const ACTIVITY_GOAL = 100;
-
 export type AppState = {
   updatedAt: number;
   heroes: Record<string, HeroState>;
@@ -28,30 +20,11 @@ export type AppState = {
   factionAcorns: Partial<Record<AcornFaction, number>>;
   soulstonesA: number;
   soulstonesS: number;
-  tasks: Task[];
-  /** Completed task ids, keyed by period key (see periodKey). */
-  done: Record<string, string[]>;
+  /** Emporium currency balances (Arena Coin, Dream Fragment, ...), entered by the user. */
+  currencies: Record<string, number>;
+  /** Emporium purchases, keyed "<period key>|<offer id>" (see periodKey). */
+  bought: Record<string, number>;
 };
-
-/** Weekly tasks reset at this UTC weekday (1 = Monday). */
-export const WEEKLY_RESET_DAY = 1;
-
-const DEFAULT_TASKS: [string, Period][] = [
-  ["AFK Stage", "daily"],
-  ["Claim instant AFK rewards", "daily"],
-  ["Arcane Labyrinth", "daily"],
-  ["Arena", "daily"],
-  ["Dream Realm", "daily"],
-  ["Dura's Trials", "daily"],
-  ["Honor Duel", "daily"],
-  ["Legend Arena", "daily"],
-  ["Supreme Arena", "daily"],
-  ["Supreme League", "daily"],
-  ["Send/receive friendship points", "daily"],
-];
-
-export const defaultTasks = (): Task[] =>
-  DEFAULT_TASKS.map(([name, period], i) => ({ id: `t${i}`, name, period }));
 
 export function defaultState(): AppState {
   return {
@@ -61,39 +34,43 @@ export function defaultState(): AppState {
     factionAcorns: {},
     soulstonesA: 0,
     soulstonesS: 0,
-    tasks: defaultTasks(),
-    done: {},
+    currencies: {},
+    bought: {},
   };
 }
 
-/** Fill in fields missing from older or partial saves. */
+/** Fill in fields missing from older or partial saves. Unknown fields (e.g. the old dailies list) are kept as-is. */
 export function normalize(raw: unknown): AppState {
   const base = defaultState();
   if (!raw || typeof raw !== "object") return base;
   return { ...base, ...(raw as Partial<AppState>) };
 }
 
+// Store stock resets daily or on the 1st of the month, both at 00:00 UTC.
+export type Period = "daily" | "monthly";
+
 const DAY = 86_400_000;
-const isoDate = (t: number) => new Date(t).toISOString().slice(0, 10);
 
 function periodStart(period: Period, now: number) {
-  const day = Math.floor(now / DAY) * DAY;
-  if (period === "daily") return day;
-  const back = (new Date(day).getUTCDay() - WEEKLY_RESET_DAY + 7) % 7;
-  return day - back * DAY;
+  if (period === "daily") return Math.floor(now / DAY) * DAY;
+  const d = new Date(now);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
 }
 
 export const periodKey = (period: Period, now = Date.now()) =>
-  `${period[0]}:${isoDate(periodStart(period, now))}`;
+  `${period[0]}:${new Date(periodStart(period, now)).toISOString().slice(0, period === "daily" ? 10 : 7)}`;
 
-export const nextReset = (period: Period, now = Date.now()) =>
-  periodStart(period, now) + (period === "daily" ? DAY : 7 * DAY);
+export function nextReset(period: Period, now = Date.now()) {
+  if (period === "daily") return periodStart(period, now) + DAY;
+  const d = new Date(now);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
+}
 
-/** Drop completion records that are no longer current. */
-export function pruneDone(state: AppState, now = Date.now()): AppState {
-  const keep = new Set([periodKey("daily", now), periodKey("weekly", now)]);
-  const done = Object.fromEntries(Object.entries(state.done).filter(([k]) => keep.has(k)));
-  return { ...state, done };
+/** Drop purchase counts from earlier periods. */
+export function pruneBought(state: AppState, now = Date.now()): AppState {
+  const keep = [periodKey("daily", now), periodKey("monthly", now)];
+  const bought = Object.fromEntries(Object.entries(state.bought).filter(([k]) => keep.some((p) => k.startsWith(`${p}|`))));
+  return { ...state, bought };
 }
 
 export const heroState = (state: AppState, name: string): HeroState =>

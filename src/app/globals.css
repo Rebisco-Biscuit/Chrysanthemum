@@ -117,14 +117,26 @@ header.top h1 { font-size: 20px; margin: 0; }
 .small { font-size: 13px; }
 h2 { font-size: 16px; margin: 0 0 12px; }
 
-/* Dailies */
+/* Shared section header */
 .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.task { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; }
-.task:hover { background: var(--surface-2); }
-.task label { flex: 1; display: flex; gap: 10px; align-items: center; cursor: pointer; }
-.task input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); }
-.task.done label span { color: var(--muted); text-decoration: line-through; }
+input[type="checkbox"] { width: 16px; height: 16px; padding: 0; accent-color: var(--accent); }
+
+/* Emporium */
+.offers { display: grid; gap: 6px; }
+.offer {
+  display: grid; grid-template-columns: minmax(170px, 1.4fr) minmax(120px, 1fr) auto auto; gap: 12px; align-items: center;
+  padding: 4px 10px; border-radius: 10px; background: var(--surface-2);
+}
+.offer.resource { grid-template-columns: 1fr auto auto; padding: 8px 10px; }
+.offer .name { font-weight: 600; }
+.offer .meta { font-size: 12px; color: var(--muted); }
+.offer .hero-card { --cw: 40px; --ch: 56px; margin: 6px 4px 8px; }
+.offer.unowned .hero-card { filter: grayscale(1); }
+.offer .need { display: grid; gap: 2px; }
+.offer .stock { white-space: nowrap; }
+.offer .buy { display: flex; gap: 6px; justify-content: flex-end; }
+.offer .buy button { padding: 4px 10px; font-size: 13px; }
+.hero-card.placeholder { background: var(--surface); border-radius: 6px 0 4px 0; }
 .progress { height: 8px; background: var(--bar); border-radius: 99px; overflow: hidden; }
 .progress > div { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.2s; }
 .progress.ready > div { background: var(--good); }
@@ -196,6 +208,10 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 @media (max-width: 680px) {
   .hero { grid-template-columns: 1fr 1fr; }
   .hero .who { grid-column: 1 / -1; }
+  .offer { grid-template-columns: 1fr auto; }
+  .offer .who { grid-column: 1 / -1; }
+  .offer.resource { grid-template-columns: 1fr auto; }
+  .offer.resource .stock { display: none; }
   .hero .next { grid-column: 1 / -1; }
 }
 

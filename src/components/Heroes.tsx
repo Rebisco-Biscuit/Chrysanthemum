@@ -239,7 +239,7 @@ export default function Heroes({
 }
 
 /** A shared resource: the total is editable, and "+ add" adds what you just earned. */
-function Pool({
+export function Pool({
   label,
   value,
   onChange,
@@ -275,7 +275,7 @@ function Pool({
 }
 
 /** Hero card in the wiki's style: tier background, card art, tier frame. Unowned heroes show their starting tier. */
-function HeroCard({ hero, tier, frames }: { hero: Hero; tier: number; frames: Frames }) {
+export function HeroCard({ hero, tier, frames }: { hero: Hero; tier: number; frames: Frames }) {
   const [broken, setBroken] = useState(false);
   const shown = tier >= 0 ? tier : startTier(hero);
   const initials = hero.name

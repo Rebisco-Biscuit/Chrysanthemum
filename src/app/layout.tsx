@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AFK Journey Tracker",
-  description: "AFK Journey dailies and hero ascension tracker",
+  description: "AFK Journey hero ascension tracker",
 };
 
 export const viewport: Viewport = {

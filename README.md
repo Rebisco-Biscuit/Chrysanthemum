@@ -1,12 +1,12 @@
 # <img width="26" height="26" alt="image" src="https://github.com/user-attachments/assets/b92a734c-77f6-4d57-955d-709e7fefc7b4" /> Chrysanthemum
 
-An AFK Journey tracker for daily/weekly tasks and hero ascension (Soul Sigils, faction and Omni-Acorns, Dimensional Soulstones). It saves to a server so the same data shows on every device.
+An AFK Journey tracker for hero ascension (Soul Sigils, faction and Omni-Acorns, Dimensional Soulstones). It saves to a server so the same data shows on every device.
 
 AFK Journey has no public API, so you enter all data by hand. Each resource has a "+ add" box, so you can type what you just earned instead of working out the new total.
 
 ## Features
 
-- **Dailies:** an editable checklist. Daily tasks reset at 00:00 UTC and weekly tasks at Monday 00:00 UTC.
+- **Emporium:** every Soul Sigil sold in the Arena, Dream, Season and Guild stores, next to how many more each hero needs. "Buy" adds the sigils to the hero, takes the price off your currency balances, and counts down the monthly stock (resets on the 1st, 00:00 UTC). Store data comes from the wiki and lives in `src/lib/emporium.ts`.
 - **Heroes:** all 128 ascendable heroes, with portraits from the wiki. For each one, set the tier and sigils on hand to see the next ascension cost and progress. An Ascend button deducts the cost. You can set a goal tier per hero, and the app checks the Paragon unlock gates. Crossover heroes have a "banner ended" switch that moves them to soulstone costs. Acorn steps spend the hero's faction acorns (Lightbearer, Mauler, Wilder, Graveborn) first, then Omni-Acorns.
 - **Data:** export or import a JSON backup.
 
