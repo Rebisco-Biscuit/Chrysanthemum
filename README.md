@@ -6,7 +6,7 @@ AFK Journey has no public API, so you enter all data by hand. Each resource has 
 
 ## Features
 
-- **Emporium:** every Soul Sigil sold in the Arena, Dream, Season and Guild stores, next to how many more each hero needs. "Buy" adds the sigils to the hero, takes the price off your currency balances, and counts down the monthly stock (resets on the 1st, 00:00 UTC). Store data comes from the wiki and lives in `src/lib/emporium.ts`.
+- **Emporium:** every Soul Sigil sold in the Arena, Dream, Season and Guild stores, next to how many more each hero needs. "Buy" adds the sigils to the hero, takes the price off your currency balances, and counts down the monthly stock (resets on the 1st, 00:00 UTC). Sort by most worth buying, closest to the next tier, cheapest to finish, tier or name. Store lists are read from the wiki every 6 hours, so they follow the game once the wiki is updated; `src/lib/emporium.ts` keeps a fallback copy for when the wiki can't be read.
 - **Heroes:** all 128 ascendable heroes, with portraits from the wiki. For each one, set the tier and sigils on hand to see the next ascension cost and progress. An Ascend button deducts the cost. You can set a goal tier per hero, and the app checks the Paragon unlock gates. Crossover heroes have a "banner ended" switch that moves them to soulstone costs. Acorn steps spend the hero's faction acorns (Lightbearer, Mauler, Wilder, Graveborn) first, then Omni-Acorns.
 - **Data:** export or import a JSON backup.
 

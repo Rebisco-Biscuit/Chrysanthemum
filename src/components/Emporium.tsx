@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { TIERS, type Frames, type Hero } from "@/lib/data";
-import { CURRENCIES, RESOURCE_OFFERS, SIGIL_OFFERS, type Offer } from "@/lib/emporium";
+import { CURRENCIES, type Offer, type Offers } from "@/lib/emporium";
 import { costTo, heroState, nextReset, nextStep, periodKey, type AppState } from "@/lib/state";
 import { HeroCard, Pool } from "./Heroes";
 import type { Update } from "./Tracker";
@@ -29,22 +29,42 @@ function sigilsNeeded(hero: Hero, state: AppState) {
 
 type Row = { offer: Offer; hero?: Hero; left: number; next: number; goal: number; worth: number };
 
+type Sort = "worth" | "closest" | "cheapest" | "tier" | "name";
+
+const SORTS: Record<Sort, { label: string; compare: (a: Row, b: Row, tierOf: (r: Row) => number) => number }> = {
+  worth: { label: "Most worth buying", compare: (a, b) => b.worth - a.worth || b.next - a.next },
+  // Heroes who need only a few more sigils for their next tier come first.
+  closest: {
+    label: "Closest to next tier",
+    compare: (a, b) => (a.next || Infinity) - (b.next || Infinity) || b.worth - a.worth,
+  },
+  cheapest: { label: "Cheapest to finish", compare: (a, b) => (a.worth * a.offer.price || Infinity) - (b.worth * b.offer.price || Infinity) },
+  tier: { label: "Highest tier", compare: (a, b, tierOf) => tierOf(b) - tierOf(a) },
+  name: { label: "Name", compare: () => 0 },
+};
+
 export default function Emporium({
   state,
   update,
   heroes,
   frames,
+  offers,
   now,
 }: {
   state: AppState;
   update: Update;
   heroes: Hero[];
   frames: Frames;
+  offers: Offers;
   now: number;
 }) {
+  const SIGIL_OFFERS = offers.offers.filter((o) => o.gives.kind === "sigil");
+  const RESOURCE_OFFERS = offers.offers.filter((o) => o.gives.kind !== "sigil");
+  const currencyList = [...new Set([...CURRENCIES, ...offers.offers.map((o) => o.currency)])];
   const [onlyNeeded, setOnlyNeeded] = useState(true);
   const [onlyOwned, setOnlyOwned] = useState(false);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<Sort>("worth");
   const byName = useMemo(() => new Map(heroes.map((h) => [h.name, h])), [heroes]);
   const bought = (o: Offer) => state.bought[boughtKey(o, now)] ?? 0;
 
@@ -63,6 +83,8 @@ export default function Emporium({
     .filter((r) => !onlyNeeded || r.worth > 0);
 
   const stores = [...new Set(SIGIL_OFFERS.map((o) => o.store))];
+  const heroName = (r: Row) => (r.offer.gives.kind === "sigil" ? r.offer.gives.hero : "");
+  const tierOf = (r: Row) => (r.hero ? heroState(state, r.hero.name).tier : -2);
 
   function buy(offer: Offer, count: number) {
     if (count <= 0) return;
@@ -96,19 +118,31 @@ export default function Emporium({
       <div className="card">
         <h2>Currencies</h2>
         <div className="pools">
-          {CURRENCIES.map((c) => (
+          {currencyList.map((c) => (
             <Pool key={c} label={`${c}s`} value={state.currencies[c] ?? 0} onChange={(v) => setCurrency(c, v)} />
           ))}
         </div>
         <p className="small muted">
           Buying here adds the sigils to the hero and takes the price off these balances. Monthly stock resets in{" "}
-          {countdown(nextReset("monthly", now) - now)} (1st of the month, 00:00 UTC). Prices and stock are from the
-          AFK Journey wiki.
+          {countdown(nextReset("monthly", now) - now)} (1st of the month, 00:00 UTC).
+        </p>
+        <p className="small muted">
+          Store lists come from the AFK Journey wiki and refresh every few hours, so they follow the game once the
+          wiki is updated.
+          {offers.builtIn.length > 0 &&
+            ` Couldn't read the wiki for ${offers.builtIn.join(", ")}; showing the saved list from 1 Nov 2026 instead.`}
         </p>
       </div>
 
       <div className="filters">
         <input type="search" placeholder="Search heroes" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort offers">
+          {(Object.keys(SORTS) as Sort[]).map((k) => (
+            <option key={k} value={k}>
+              Sort: {SORTS[k].label.toLowerCase()}
+            </option>
+          ))}
+        </select>
         <label className="row small">
           <input type="checkbox" checked={onlyNeeded} onChange={(e) => setOnlyNeeded(e.target.checked)} />
           Only heroes who need sigils
@@ -122,7 +156,7 @@ export default function Emporium({
       {stores.map((store) => {
         const storeRows = visible
           .filter((r) => r.offer.store === store)
-          .sort((a, b) => b.worth - a.worth || b.next - a.next || a.offer.price - b.offer.price);
+          .sort((a, b) => SORTS[sort].compare(a, b, tierOf) || heroName(a).localeCompare(heroName(b)));
         const all = rows.filter((r) => r.offer.store === store);
         const currencies = [...new Set(all.map((r) => r.offer.currency))];
         const worthCost = all.reduce((sum, r) => sum + r.worth * r.offer.price, 0);

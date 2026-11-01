@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Frames, Hero } from "@/lib/data";
+import type { Offers } from "@/lib/emporium";
 import { normalize, pruneBought, type AppState } from "@/lib/state";
 import Emporium from "./Emporium";
 import Heroes from "./Heroes";
@@ -13,7 +14,17 @@ type Sync = "saved" | "saving" | "error";
 
 export type Update = (fn: (s: AppState) => AppState) => void;
 
-export default function Tracker({ initial, heroes, frames }: { initial: AppState; heroes: Hero[]; frames: Frames }) {
+export default function Tracker({
+  initial,
+  heroes,
+  frames,
+  offers,
+}: {
+  initial: AppState;
+  heroes: Hero[];
+  frames: Frames;
+  offers: Offers;
+}) {
   const [state, setState] = useState(() => pruneBought(initial));
   const [tab, setTab] = useState<Tab>("Heroes");
   const [sync, setSync] = useState<Sync>("saved");
@@ -109,7 +120,7 @@ export default function Tracker({ initial, heroes, frames }: { initial: AppState
         <span className={`sync ${sync === "error" ? "error" : ""}`}>{syncLabel}</span>
       </header>
       {tab === "Heroes" && <Heroes state={state} update={update} heroes={heroes} frames={frames} />}
-      {tab === "Emporium" && <Emporium state={state} update={update} heroes={heroes} frames={frames} now={now} />}
+      {tab === "Emporium" && <Emporium state={state} update={update} heroes={heroes} frames={frames} offers={offers} now={now} />}
       {tab === "Data" && <DataTab state={state} update={update} />}
     </div>
   );

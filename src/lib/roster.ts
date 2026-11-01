@@ -1,5 +1,6 @@
 import "server-only";
 import { FACTIONS, HEROES, TIERS, type Faction, type Frames, type Hero } from "./data";
+import { RESOURCE_OFFERS, SIGIL_OFFERS, STORE_PAGES, parseStore, type Offers } from "./emporium";
 
 // New heroes are picked up from the AFK Journey wiki. The built-in list in data.ts is the
 // fallback and always wins for heroes it already knows, so a wiki outage or a bad edit
@@ -144,4 +145,32 @@ export async function getHeroes(): Promise<{ heroes: Hero[]; added: string[] }> 
   } catch {}
   const pics = await portraits(heroes.map((h) => h.name));
   return { heroes: heroes.map((h) => (pics[h.name] ? { ...h, portrait: pics[h.name] } : h)), added };
+}
+
+/** Emporium offers, read from each store's wiki page. Stores the wiki can't provide use the built-in snapshot. */
+export async function getOffers(): Promise<Offers> {
+  const snapshot = [...SIGIL_OFFERS, ...RESOURCE_OFFERS];
+  const results = await Promise.all(
+    Object.entries(STORE_PAGES).map(async ([store, page]) => {
+      try {
+        const params = new URLSearchParams({ action: "parse", page, prop: "wikitext", format: "json" });
+        const res = await fetch(`${API}?${params}`, {
+          headers: { "user-agent": "Mozilla/5.0 (AFKJ-T tracker)" },
+          next: { revalidate: REVALIDATE },
+        });
+        if (!res.ok) throw new Error(`wiki ${res.status}`);
+        const offers = parseStore(store, (await res.json()).parse.wikitext["*"]);
+        // An empty result means the page layout changed; don't wipe the store over it.
+        if (!offers.length) throw new Error("no offers parsed");
+        return { store, offers, wiki: true };
+      } catch {
+        return { store, offers: snapshot.filter((o) => o.store === store), wiki: false };
+      }
+    }),
+  );
+  return {
+    offers: results.flatMap((r) => r.offers),
+    fromWiki: results.filter((r) => r.wiki).map((r) => r.store),
+    builtIn: results.filter((r) => !r.wiki).map((r) => r.store),
+  };
 }
