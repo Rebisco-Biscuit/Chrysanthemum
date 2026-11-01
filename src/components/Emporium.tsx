@@ -5,6 +5,7 @@ import { TIERS, type Frames, type Hero } from "@/lib/data";
 import { CURRENCIES, type Offer, type Offers } from "@/lib/emporium";
 import { costTo, heroState, nextReset, nextStep, periodKey, type AppState } from "@/lib/state";
 import { HeroCard, Pool } from "./Heroes";
+import NumberInput from "./NumberInput";
 import type { Update } from "./Tracker";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -277,18 +278,17 @@ function OfferRow({ row, state, frames, onBuy }: { row: Row; state: AppState; fr
 
 /** Quantity box + Buy. Starts at the suggested amount (what the hero needs), capped at the stock left. */
 function BuyControl({ left, suggested, onBuy }: { left: number; suggested: number; onBuy: (n: number) => void }) {
-  const [qty, setQty] = useState<string | null>(null); // null = use the suggestion
+  // undefined = use the suggestion; null = the user cleared the box.
+  const [qty, setQty] = useState<number | null | undefined>(undefined);
   const fallback = Math.min(left, Math.max(1, suggested));
-  const n = Math.min(left, Math.max(0, Math.trunc(Number(qty ?? fallback)) || 0));
+  const n = Math.min(left, qty === undefined ? fallback : (qty ?? 0));
   return (
     <div className="buy">
-      <input
-        type="number"
-        min={1}
+      <NumberInput
+        value={qty === undefined ? (left > 0 ? fallback : 0) : qty}
         max={left}
-        value={qty ?? (left > 0 ? fallback : 0)}
         disabled={left === 0}
-        onChange={(e) => setQty(e.target.value)}
+        onChange={setQty}
         aria-label="How many to buy"
       />
       <button
@@ -296,7 +296,7 @@ function BuyControl({ left, suggested, onBuy }: { left: number; suggested: numbe
         disabled={n < 1}
         onClick={() => {
           onBuy(n);
-          setQty(null);
+          setQty(undefined);
         }}
       >
         Buy{n > 0 ? ` ${n}` : ""}

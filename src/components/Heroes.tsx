@@ -25,6 +25,7 @@ import {
   type HeroState,
   type Step,
 } from "@/lib/state";
+import NumberInput from "./NumberInput";
 import type { Update } from "./Tracker";
 
 type Owned = "all" | "owned" | "unowned";
@@ -250,23 +251,21 @@ export function Pool({
   onChange: (v: number) => void;
   color?: string;
 }) {
-  const [add, setAdd] = useState("");
+  const [add, setAdd] = useState<number | null>(null);
   const commit = () => {
-    const n = Math.trunc(+add);
-    if (n) onChange(value + n);
-    setAdd("");
+    if (add) onChange(value + add);
+    setAdd(null);
   };
   return (
     <div className="pool" style={color ? ({ "--faction": color } as React.CSSProperties) : undefined}>
       <span className="label">{label}</span>
-      <input type="number" min={0} value={value} onChange={(e) => onChange(+e.target.value)} aria-label={label} />
-      <input
-        type="number"
+      <NumberInput value={value} onChange={(v) => onChange(v ?? 0)} aria-label={label} />
+      <NumberInput
         className="add"
         placeholder="+ add"
         value={add}
-        onChange={(e) => setAdd(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && commit()}
+        onChange={setAdd}
+        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
         onBlur={commit}
         aria-label={`Add ${label}`}
       />
@@ -359,12 +358,10 @@ function HeroRow({
         <button onClick={() => setHero(hero.name, { sigils: Math.max(0, hs.sigils - 1) })} disabled={hs.soulstones}>
           −
         </button>
-        <input
-          type="number"
-          min={0}
+        <NumberInput
           value={hs.sigils}
           disabled={hs.soulstones}
-          onChange={(e) => setHero(hero.name, { sigils: Math.max(0, +e.target.value || 0) })}
+          onChange={(v) => setHero(hero.name, { sigils: v ?? 0 })}
           aria-label={`${hero.name} sigils`}
         />
         <button onClick={() => setHero(hero.name, { sigils: hs.sigils + 1 })} disabled={hs.soulstones}>
