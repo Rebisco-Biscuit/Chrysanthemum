@@ -15,6 +15,8 @@ function countdown(ms: number) {
   return d >= 1 ? `${d}d ${h % 24}h` : `${h}h ${Math.floor((ms % 3_600_000) / 60_000)}m`;
 }
 
+const RESOURCES = "Acorns & soulstones";
+
 const boughtKey = (o: Offer, now: number) => `${periodKey(o.period, now)}|${o.id}`;
 
 /** Sigils this hero still needs: for the next tier, or for their goal if that's further. */
@@ -65,6 +67,8 @@ export default function Emporium({
   const [onlyOwned, setOnlyOwned] = useState(false);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("worth");
+  // One store at a time, or all of them (null). RESOURCES = the acorns & soulstones section.
+  const [storeFilter, setStoreFilter] = useState<string | null>(null);
   const byName = useMemo(() => new Map(heroes.map((h) => [h.name, h])), [heroes]);
   const bought = (o: Offer) => state.bought[boughtKey(o, now)] ?? 0;
 
@@ -152,8 +156,22 @@ export default function Emporium({
           Owned only
         </label>
       </div>
+      <div className="filters">
+        <button className={`chip ${storeFilter === null ? "active" : ""}`} onClick={() => setStoreFilter(null)}>
+          All stores
+        </button>
+        {[...stores, RESOURCES].map((st) => (
+          <button
+            key={st}
+            className={`chip ${storeFilter === st ? "active" : ""}`}
+            onClick={() => setStoreFilter(storeFilter === st ? null : st)}
+          >
+            {st}
+          </button>
+        ))}
+      </div>
 
-      {stores.map((store) => {
+      {stores.filter((st) => storeFilter === null || storeFilter === st).map((store) => {
         const storeRows = visible
           .filter((r) => r.offer.store === store)
           .sort((a, b) => SORTS[sort].compare(a, b, tierOf) || heroName(a).localeCompare(heroName(b)));
@@ -192,8 +210,9 @@ export default function Emporium({
         );
       })}
 
+      {(storeFilter === null || storeFilter === RESOURCES) && (
       <section className="card">
-        <h2>Acorns & soulstones</h2>
+        <h2>{RESOURCES}</h2>
         <div className="offers">
           {RESOURCE_OFFERS.map((offer) => {
             const g = offer.gives;
@@ -211,11 +230,7 @@ export default function Emporium({
                 <span className="small muted stock">
                   {left}/{offer.stock} left
                 </span>
-                <div className="buy">
-                  <button onClick={() => buy(offer, 1)} disabled={left === 0}>
-                    Buy
-                  </button>
-                </div>
+                <BuyControl left={left} suggested={1} onBuy={(n) => buy(offer, n)} />
               </div>
             );
           })}
@@ -225,6 +240,7 @@ export default function Emporium({
           {countdown(nextReset("daily", now) - now)}.
         </p>
       </section>
+      )}
     </div>
   );
 }
@@ -254,16 +270,37 @@ function OfferRow({ row, state, frames, onBuy }: { row: Row; state: AppState; fr
       <span className="small muted stock">
         {fmt(offer.price)} {offer.currency}s · {left}/{offer.stock} left
       </span>
-      <div className="buy">
-        <button onClick={() => onBuy(1)} disabled={left === 0}>
-          Buy 1
-        </button>
-        {worth > 1 && (
-          <button className="primary" onClick={() => onBuy(worth)}>
-            Buy {worth}
-          </button>
-        )}
-      </div>
+      <BuyControl left={left} suggested={worth} onBuy={onBuy} />
+    </div>
+  );
+}
+
+/** Quantity box + Buy. Starts at the suggested amount (what the hero needs), capped at the stock left. */
+function BuyControl({ left, suggested, onBuy }: { left: number; suggested: number; onBuy: (n: number) => void }) {
+  const [qty, setQty] = useState<string | null>(null); // null = use the suggestion
+  const fallback = Math.min(left, Math.max(1, suggested));
+  const n = Math.min(left, Math.max(0, Math.trunc(Number(qty ?? fallback)) || 0));
+  return (
+    <div className="buy">
+      <input
+        type="number"
+        min={1}
+        max={left}
+        value={qty ?? (left > 0 ? fallback : 0)}
+        disabled={left === 0}
+        onChange={(e) => setQty(e.target.value)}
+        aria-label="How many to buy"
+      />
+      <button
+        className={suggested > 0 && left > 0 ? "primary" : ""}
+        disabled={n < 1}
+        onClick={() => {
+          onBuy(n);
+          setQty(null);
+        }}
+      >
+        Buy{n > 0 ? ` ${n}` : ""}
+      </button>
     </div>
   );
 }

@@ -136,6 +136,7 @@ input[type="checkbox"] { width: 16px; height: 16px; padding: 0; accent-color: va
 .offer .stock { white-space: nowrap; }
 .offer .buy { display: flex; gap: 6px; justify-content: flex-end; }
 .offer .buy button { padding: 4px 10px; font-size: 13px; }
+.offer .buy input { width: 60px; padding: 4px 6px; font-size: 13px; text-align: center; }
 .hero-card.placeholder { background: var(--surface); border-radius: 6px 0 4px 0; }
 .progress { height: 8px; background: var(--bar); border-radius: 99px; overflow: hidden; }
 .progress > div { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.2s; }
